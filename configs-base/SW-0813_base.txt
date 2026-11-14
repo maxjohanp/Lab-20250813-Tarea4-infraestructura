@@ -1,0 +1,62 @@
+! =====================================================================
+! SW-0813 - Switch Cisco IOSvL2 (IOS 15.2) - CONFIGURACION BASE
+! Maxyohan Montas Pena - 2025-0813 - Seguridad de Redes
+!
+! Es la red funcionando ANTES del hardening. El hardening CIS lo aplica
+! despues el script scripts/cis_hardening_0813.py (modo aplicar).
+!
+! Se pega en la consola de GNS3, un bloque a la vez.
+! <CLAVE> se escribe a mano (la misma del router y del firewall).
+! =====================================================================
+
+! ---------- BLOQUE 1: nombre, VLAN 13, puertos e IP de gestion ----------
+enable
+configure terminal
+hostname SW-0813
+no ip domain-lookup
+ip domain-name lab0813.local
+vlan 13
+ name LAN-0813
+exit
+interface GigabitEthernet0/0
+ description R-0813 Fa1/0 (gateway de la LAN)
+ switchport mode access
+ switchport access vlan 13
+ no shutdown
+interface GigabitEthernet0/1
+ description PC1 (usuario)
+ switchport mode access
+ switchport access vlan 13
+ no shutdown
+interface GigabitEthernet0/2
+ description PC-ADMIN (Windows por el nodo Cloud)
+ switchport mode access
+ switchport access vlan 13
+ no shutdown
+interface Vlan13
+ description Gestion de SW-0813
+ ip address 10.20.25.2 255.255.255.0
+ no shutdown
+exit
+ip default-gateway 10.20.25.1
+line vty 0 15
+ login local
+ transport input telnet ssh
+end
+
+! ---------- BLOQUE 2: usuario y clave (escribelo a mano) ----------
+configure terminal
+username admin secret <CLAVE>
+enable secret <CLAVE>
+end
+
+! ---------- BLOQUE 3: llave RSA para SSH ----------
+configure terminal
+crypto key generate rsa modulus 2048
+end
+
+! ---------- BLOQUE 4: guardar y comprobar ----------
+write memory
+show vlan brief
+show ip interface brief | include Vlan13
+show ip ssh
